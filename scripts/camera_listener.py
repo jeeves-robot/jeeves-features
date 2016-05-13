@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
-from move_util import NAV_TOPIC, twist_forward, twist_direction
+import time
+from move_util import NAV_TOPIC, twist_forward, twist_right, twist_direction
 from geometry_msgs.msg import Twist
 from jeeves.msg import Order
 
-nav_publisher = rospy.Publisher(NAV_TOPIC, Twist)
+nav_publisher = rospy.Publisher(NAV_TOPIC, Twist, queue_size=5)
 
 busy = False
 
