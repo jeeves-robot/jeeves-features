@@ -28,25 +28,24 @@ def twist_left():
     twistLeft = Twist()
     twistLeft.angular.z = 3.14
 
-def forward_back(pub):
-    pub.publish(twist_forward())
-    time.sleep(0.2)
-    pub.publish(twist_backward())
-    time.sleep(0.2)
-
-def twist_direction(pub, direction):
-    pub.publish(direction)
-    time.sleep(0.5)
+FORWARD = twist_forward()
+BACKWARD = twist_backward()
+RIGHT = twist_right()
+LEFT = twist_left()
 
 class MoveUtil:
 
     def __init__(self, myMap):
-        self._twist_publisher = rospy.Publisher(NAV_TOPIC, Twist)
+        self._pub = rospy.Publisher(NAV_TOPIC, Twist)
         self._map = myMap
+
+    def _twist_direction(self, direction):
+        self._pub.publish(direction)
+        time.sleep(0.5)
 
     def forwardThenTurn(self, pose):
         # Move forward so we have space to turn
-        self._twist_publisher.publish(twist_forward())
+        self._pub.publish(FORWARD)
         time.sleep(0.2)
         self._map.go_to_marker(pose)
 

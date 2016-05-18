@@ -25,11 +25,11 @@ class RobotFSM:
     def validateQRCode(self, qrcode):
         # see if location is one we know about
         if self._state == IDLE_STATE and self._map.contains(qrcode.location):
+            self._order = qrcode
             # Turn around
             self._state = WAIT_PACKAGE_STATE
             self._move_util.forwardThenTurn(self, WAIT_PACKAGE_POSE)
             # Wait for package (in future this will involve scale readings)
-            self._order = qrcode
             time.sleep(20)
             self.packageReceived()
         else:
@@ -60,12 +60,11 @@ class RobotFSM:
             if self._move_util.goToPose(HOME_POSE, 300):
                 self._state = IDLE_STATE
 
-    def __init__(self, myMap):
+    def __init__(self, floorMap):
         rospy.init_node('jeeves_main')
-
         self._state = IDLE_STATE
-        self._map = myMap
-        self._move_util = MoveUtil(myMap)
+        self._map = floorMap
+        self._move_util = MoveUtil(floorMap)
         self._order = None
 
         # Set up listener for QRCode message
@@ -73,7 +72,7 @@ class RobotFSM:
                 Order, self.validateQRCode)
 
 if __name__ == '__main__':
-    myMap = MapUtil(MAP_FILE)
-    robotFSM = RobotFSM()
+    floorMap = MapUtil(MAP_FILE)
+    robotFSM = RobotFSM(floorMap)
     rospy.spin()
 

@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
 import rospy
-import tf
-import turtlesim.srv
-import time
-import math
-import sys
-import csv
 import actionlib
-
 from geometry_msgs.msg import Quaternion, Pose, Point, Vector3, Twist
-from std_msgs.msg import Header, ColorRGBA
 from move_base_msgs.msg import *
+
+from load_locations import load_locations
 
 base_position = 'map'
 displaced_position = 'base_link'
@@ -30,14 +24,14 @@ class MapUtil:
         print(quaternion)
 
         # Set up goal
-        specificGoal = MoveBaseGoal()
-        specificGoal.target_pose.header.frame_id = 'map'
-        specificGoal.target_pose.header.stamp = rospy.Time.now()
-
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = 'map'
+        goal.target_pose.header.stamp = rospy.Time.now()
         pose = Pose(point_position, quaternion)
-        specificGoal.target_pose.pose = pose
+        goal.target_pose.pose = pose
 
-        self._action_client.send_goal(specificGoal)
+        # Send goal
+        self._action_client.send_goal(goal)
         finished_on_time = self._action_client.wait_for_result(rospy.Duration.from_sec(timeout))
         if not finished_on_time:
             self._action_client.cancel_goal()
@@ -55,40 +49,17 @@ class MapUtil:
 
     def __init__(self, filename):
         self._markers = {}
-        self._filename = filename
-        self._num_markers = 0
         self._goal_id=0
 
-        # Set up node for annotater
+        # Set up node for map
         rospy.init_node('turtlebot_map')
-        # Create a TF listener
-        self._listener = tf.TransformListener()
-        self._rate = rospy.Rate(10.0)
 
         # Wait until subscribers notice new publisher
         rospy.sleep(1)
 
-        print "opening file"
-        # Load in any previously saved markers
-        with open(self._filename, 'ab+') as csvfile:
-            reader = csv.DictReader(csvfile,
-                    fieldnames=fieldnames, delimiter='\t', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            for row in reader:
-                my_row = dict()
-                my_row['name'] = row['name']
-                my_row['posX'] = float(row['posX'])
-                my_row['posY'] = float(row['posY'])
-                my_row['posZ'] = float(row['posZ'])
-                my_row['quat0'] = float(row['quat0'])
-                my_row['quat1'] = float(row['quat1'])
-                my_row['quat2'] = float(row['quat2'])
-                my_row['quat3'] = float(row['quat3'])
-                my_row['radius'] = float(row['radius'])
-                my_row['type'] = row['type']
-                self._markers[row['name']]=my_row
-                pose = Pose(Point(my_row['posX'], my_row['posY'], my_row['posZ']),
-                        Quaternion(my_row['quat0'], my_row['quat1'], my_row['quat2'], my_row['quat3']))
-        print "file read"
+        # Read locations from file
+        load_locations(filename, markers)
+
         print self._markers
 
         # Set up action client to send goals to
