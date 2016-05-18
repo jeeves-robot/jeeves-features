@@ -2,6 +2,7 @@
 
 import rospy
 import time
+from firebase import Firebase
 
 from map_util import MapUtil
 
@@ -18,6 +19,8 @@ HOME_POSE = "home"
 QRCODE_TOPIC = "/jeeves_qr_code"
 
 MAP_FILE = "locations.csv"
+
+FIREBASE_URL = "https://jeeves-server.firebaseio.com/notifs"
 
 class RobotFSM:
     # Passed as listener to topic qrcode
@@ -47,7 +50,9 @@ class RobotFSM:
     def reachedDoor(self):
         if self._state == TO_ROOM:
             self._state = AT_ROOM
-            # TODO: Send message
+            # Send notification
+            message = self._order.name + " , your delivery is at your door!"
+            self._firebaseRef.push({ 'to' : self._order.phone_number, 'body' : message})
             # Wait for package to be taken
             # In future this will involve scale readings
             # and handle case where it is not picked up
@@ -70,6 +75,8 @@ class RobotFSM:
         # Set up listener for QRCode message
         self._qrcode_subscriber = rospy.Subscriber(QRCODE_TOPIC,
                 Order, self.validateQRCode)
+        # Set up firebase ref for notifications
+        self._firebaseRef = Firebase(FIREBASE_URL)
 
 if __name__ == '__main__':
     floorMap = MapUtil(MAP_FILE)
