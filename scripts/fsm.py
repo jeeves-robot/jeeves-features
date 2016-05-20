@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import sys
 import rospy
 import time
-from firebase import Firebase
-
-from map_util import MapUtil
+from firebase import firebase
+from map_util import MapUtil as MapUtil
+from move_util import MoveUtil as MoveUtil
+from jeeves.msg import *
 
 IDLE_STATE = 0
 WAIT_PACKAGE_STATE = 1
@@ -15,11 +17,7 @@ TO_FRONT_DESK = 5
 
 WAIT_PACKAGE_POSE = "wait_package_pose"
 HOME_POSE = "home"
-
 QRCODE_TOPIC = "/jeeves_qr_code"
-
-MAP_FILE = "locations.csv"
-
 FIREBASE_URL = "https://jeeves-server.firebaseio.com/notifs"
 
 class RobotFSM:
@@ -31,7 +29,7 @@ class RobotFSM:
             self._order = qrcode
             # Turn around
             self._state = WAIT_PACKAGE_STATE
-            self._move_util.forwardThenTurn(self, WAIT_PACKAGE_POSE)
+            self._move_util.forwardThenTurn(WAIT_PACKAGE_POSE)
             # Wait for package (in future this will involve scale readings)
             time.sleep(20)
             self.packageReceived()
@@ -56,6 +54,7 @@ class RobotFSM:
             # Wait for package to be taken
             # In future this will involve scale readings
             # and handle case where it is not picked up
+            # TODO: go to front desk if package not picked up
             time.sleep(60)
             packageDelivered(self)
 
@@ -65,21 +64,26 @@ class RobotFSM:
             if self._move_util.goToPose(HOME_POSE, 300):
                 self._state = IDLE_STATE
 
-    def __init__(self, floorMap):
+    def __init__(self, locationsFile):
         rospy.init_node('jeeves_main')
         self._state = IDLE_STATE
-        self._map = floorMap
-        self._move_util = MoveUtil(floorMap)
+        self._map = MapUtil(locationsFile)
+        self._move_util = MoveUtil(self._map)
         self._order = None
 
         # Set up listener for QRCode message
         self._qrcode_subscriber = rospy.Subscriber(QRCODE_TOPIC,
                 Order, self.validateQRCode)
         # Set up firebase ref for notifications
-        self._firebaseRef = Firebase(FIREBASE_URL)
+        self._firebaseRef = firebase.FirebaseApplication(FIREBASE_URL)
 
 if __name__ == '__main__':
-    floorMap = MapUtil(MAP_FILE)
-    robotFSM = RobotFSM(floorMap)
+    if len(sys.argv) < 2:
+      print "Pass filename of locations file as argument to command line program."
+      print "Defaulting to markers.csv"
+      locations_file = "markers.csv"
+    else:
+      locations_file = sys.argv[1]
+    robotFSM = RobotFSM(locations_file)
     rospy.spin()
 

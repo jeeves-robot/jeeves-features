@@ -1,5 +1,7 @@
 import csv
 
+fieldnames=['name', 'posX', 'posY', 'posZ', 'quat0', 'quat1', 'quat2', 'quat3', 'markerNum', 'type', 'radius']   
+ 
 # Load in previously saved locations
 def load_locations(filename, locations):
   print "opening file"

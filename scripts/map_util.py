@@ -4,7 +4,6 @@ import rospy
 import actionlib
 from geometry_msgs.msg import Quaternion, Pose, Point, Vector3, Twist
 from move_base_msgs.msg import *
-
 from load_locations import load_locations
 
 base_position = 'map'
@@ -13,6 +12,8 @@ fieldnames=['name', 'posX', 'posY', 'posZ', 'quat0', 'quat1', 'quat2', 'quat3', 
 
 CIRCLE = 'circle'
 POSE = 'pose'
+
+GOAL_STATUS_SUCCEEDED = 3
 
 class MapUtil:
     def go_to_marker(self, name, timeout):
@@ -37,7 +38,7 @@ class MapUtil:
             self._action_client.cancel_goal()
             print "Timed out acheiving goal"
         else:
-            if self._action_client.get_state() == GoalStatus.SUCCEEDED:
+            if self._action_client.get_state() == GOAL_STATUS_SUCCEEDED: 
                 print "Success!"
                 return True
             else:
@@ -51,14 +52,11 @@ class MapUtil:
         self._markers = {}
         self._goal_id=0
 
-        # Set up node for map
-        rospy.init_node('turtlebot_map')
-
         # Wait until subscribers notice new publisher
         rospy.sleep(1)
 
         # Read locations from file
-        load_locations(filename, markers)
+        load_locations(filename, self._markers)
 
         print self._markers
 

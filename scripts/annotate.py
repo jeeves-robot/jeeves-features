@@ -14,11 +14,10 @@ from geometry_msgs.msg import Quaternion, Pose, Point, Vector3, Twist
 from std_msgs.msg import Header, ColorRGBA
 from move_base_msgs.msg import *
 
-from load_locations import load_locations
+from load_locations import load_locations, fieldnames
 
 base_position = 'map'
 displaced_position = 'base_link'
-fieldnames=['name', 'posX', 'posY', 'posZ', 'quat0', 'quat1', 'quat2', 'quat3', 'markerNum', 'type', 'radius']
 
 CIRCLE = 'circle'
 POSE = 'pose'
@@ -60,7 +59,7 @@ class Annotator:
             self._marker_publisher.publish(marker)
 
 	def place_marker(self, name, regionType, regionSize):
-            now = rospy.Time.now()
+            now = rospy.Time(0)
             # This is made up of a position and a quarternion
             self._listener.waitForTransform(base_position, displaced_position, now, rospy.Duration(20.0))
             (pos, quat) = self._listener.lookupTransform(base_position, displaced_position, rospy.Time(0))
@@ -171,5 +170,5 @@ if __name__ == '__main__':
             elif args[0] == 'g':
                     annotate.go_to_marker(args[1])
             elif args[0] == 'l':
-                    for marker in self._markers:
+                    for marker in annotate._markers:
                         print marker['name'], "\t of type ", marker['type']
