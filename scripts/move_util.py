@@ -47,8 +47,8 @@ class MoveUtil:
         # Move forward so we have space to turn
         self._pub.publish(FORWARD)
         time.sleep(0.5)
-        self._map.go_to_marker(pose, 60)
+        return self._map.go_to_marker(pose, 60)
 
     def goToPose(self, pose, timeout):
-        self._map.go_to_marker(pose, timeout)
+        return self._map.go_to_marker(pose, timeout)
 
