@@ -15,13 +15,17 @@ TO_ROOM = 2
 AT_ROOM = 3
 TO_FRONT_DOOR = 4
 TO_FRONT_DESK = 5
+AT_FRONT_DESK = 6
 
 WAIT_PACKAGE_POSE = "wait_package_pose"
 HOME_POSE = "home"
+FRONT_DESK_POSE = "front_desk"
+
 QRCODE_TOPIC = "/jeeves_qr_code"
 FIREBASE_URL = "https://jeeves-server.firebaseio.com"
 
 WAIT_TIME = 1
+TO_DESTINATION_TIME = 300
 
 class RobotFSM:
     # Passed as listener to topic qrcode
@@ -49,12 +53,14 @@ class RobotFSM:
             self._state = TO_ROOM
             # Note, this will hang until we reach the location or give up
             # TODO: Handle failure
-            if self._move_util.goToPose(self._order.location, 300):
+            if self._move_util.goToPose(self._order.location, TO_DESTINATION_TIME):
                 self._state_lock.release()
                 print('calling reached door')
                 self.reachedDoor()
             else:
+                self._state = TO_FRONT_DESK
                 self._state_lock.release()
+                self.toFrontDesk()
         else:
             self._state_lock.release()
 
@@ -77,15 +83,29 @@ class RobotFSM:
         else:
             self._state_lock.release()
 
+    def toFrontDesk(self):
+        self._state_lock.acquire()
+        if self._state == TO_FRONT_DESK:
+            if self._move_util.goToPose(FRONT_DESK, TO_DESTINATION_TIME):
+                self._state = AT_FRONT_DESK
+                time.sleep(WAIT_TIME)
+        self._state_lock.release()
+
     def packageDelivered(self):
         self._state_lock.acquire()
         if self._state == AT_ROOM:
             self._state = TO_FRONT_DOOR
             print "Going to home"
-            if self._move_util.goToPose(HOME_POSE, 300):
+            if self._move_util.goToPose(HOME_POSE, TO_DESTINATION_TIME):
                 self._state = IDLE_STATE
                 self._qrcode_subscriber = self.createSubscriber()
-        self._state_lock.release()
+                self._state_lock.release()
+            else:
+                self._state = TO_FRONT_DESK
+                self._state_lock.release()
+                self.toFrontDesk()
+        else:
+            self._state_lock.release()
 
     def createSubscriber(self):
         return rospy.Subscriber(QRCODE_TOPIC, Order, self.validateQRCode)
