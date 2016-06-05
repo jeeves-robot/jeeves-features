@@ -11,7 +11,7 @@ NAV_TOPIC = '/cmd_vel_mux/input/navi'
 
 def twist_forward():
     twistForward = Twist()
-    twistForward.linear.x = 0.1
+    twistForward.linear.x = 0.2
     return twistForward
 
 def twist_backward():
@@ -36,7 +36,7 @@ LEFT = twist_left()
 class MoveUtil:
 
     def __init__(self, myMap):
-        self._pub = rospy.Publisher(NAV_TOPIC, Twist)
+        self._pub = rospy.Publisher(NAV_TOPIC, Twist, queue_size=1)
         self._map = myMap
 
     def _twist_direction(self, direction):
@@ -45,8 +45,9 @@ class MoveUtil:
 
     def forwardThenTurn(self, pose):
         # Move forward so we have space to turn
-        self._pub.publish(FORWARD)
-        time.sleep(2)
+        for i in (1, 5):
+            self._pub.publish(FORWARD)
+            time.sleep(1)
         return self._map.go_to_marker(pose, 60)
 
     def goToPose(self, pose, timeout):

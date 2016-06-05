@@ -5,10 +5,11 @@ import actionlib
 from geometry_msgs.msg import Quaternion, Pose, Point, Vector3, Twist
 from move_base_msgs.msg import *
 from load_locations import load_locations
+from std_srvs.srv import Empty
 
 base_position = 'map'
 displaced_position = 'base_link'
-fieldnames=['name', 'posX', 'posY', 'posZ', 'quat0', 'quat1', 'quat2', 'quat3', 'markerNum', 'type', 'radius']
+fieldnames = ['name', 'posX', 'posY', 'posZ', 'quat0', 'quat1', 'quat2', 'quat3', 'markerNum', 'type', 'radius']
 
 CIRCLE = 'circle'
 POSE = 'pose'
@@ -37,13 +38,28 @@ class MapUtil:
         if not finished_on_time:
             self._action_client.cancel_goal()
             print "Timed out acheiving goal"
+        successState = self._action_client.get_state()
+        
+        if successState == GOAL_STATUS_SUCCEEDED:
+            print "Success!"
+            return True
         else:
-            if self._action_client.get_state() == GOAL_STATUS_SUCCEEDED: 
-                print "Success!"
+            try:
+                self._costmap_client()
+            except rospy.ServiceException, e:
+                print "Sevice call failed: ", e
+            self._action_client.send_goal(goal)
+            if not self._action_client.wait_for_result(rospy.Duration.from_sec(timeout)):
+                self._action_client.cancel_goal()
+                print "Timed out again"
+            successState = self._action_client.get_state()
+
+            if successState == GOAL_STATUS_SUCCEEDED:
+                print "Success"
                 return True
-            else:
-                print "Failure"
-                return False
+
+            print "Failure", successState
+            return False
 
     def contains(self, name):
         return name in self._markers
@@ -62,5 +78,8 @@ class MapUtil:
 
         # Set up action client to send goals to
         self._action_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+        rospy.wait_for_service('/move_base/clear_costmaps')
+        self._costmap_client = rospy.ServiceProxy('/move_base/clear_costmaps', Empty)
         # Note, if acml_demo.launch is not running, this will take forever
         self._action_client.wait_for_server()
+        print "map util running"
