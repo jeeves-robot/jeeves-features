@@ -11,7 +11,7 @@ NAV_TOPIC = '/cmd_vel_mux/input/navi'
 
 def twist_forward():
     twistForward = Twist()
-    twistForward.linear.x = 0.05
+    twistForward.linear.x = 0.1
     return twistForward
 
 def twist_backward():
@@ -46,7 +46,7 @@ class MoveUtil:
     def forwardThenTurn(self, pose):
         # Move forward so we have space to turn
         self._pub.publish(FORWARD)
-        time.sleep(0.5)
+        time.sleep(2)
         return self._map.go_to_marker(pose, 60)
 
     def goToPose(self, pose, timeout):

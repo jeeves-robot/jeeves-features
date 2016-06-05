@@ -22,6 +22,8 @@ displaced_position = 'base_link'
 CIRCLE = 'circle'
 POSE = 'pose'
 
+GOAL_SUCCEEDED = 3
+
 class Annotator:
         def draw_marker(self, pose, name):
             print "Drawing marker"
@@ -117,7 +119,7 @@ class Annotator:
                 self._action_client.cancel_goal()
                 print "Timed out acheiving goal"
             else:
-                if self._action_client.get_state() == GoalStatus.SUCCEEDED:
+                if self._action_client.get_state() == GOAL_SUCCEEDED:
                     print "Success!"
                 else:
                     print "Failure"
@@ -150,8 +152,8 @@ class Annotator:
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "Pass file location as argument to command line."
-        print "Defaulting to markers.cv"
-        filename = 'markers.cv'
+        print "Defaulting to markers.csv"
+        filename = 'markers.csv'
     else:
 	filename = sys.argv[1]
     annotate = Annotator(filename)
