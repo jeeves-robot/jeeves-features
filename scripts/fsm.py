@@ -116,6 +116,7 @@ class RobotFSM:
             self.changeToState(TO_FRONT_DOOR)
             print "Going to home"
             if self._move_util.goToPose(HOME_POSE, TO_DESTINATION_TIME):
+                self._move_util.backward()
                 self.changeToState(IDLE_STATE)
                 self._qrcode_subscriber = self.createSubscriber()
                 self._state_lock.release()

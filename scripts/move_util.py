@@ -16,7 +16,7 @@ def twist_forward():
 
 def twist_backward():
     twistBackward = Twist()
-    twistBackward.linear.x = -0.05
+    twistBackward.linear.x = -0.2
     return twistBackward
 
 def twist_right():
@@ -45,10 +45,19 @@ class MoveUtil:
 
     def forwardThenTurn(self, pose):
         # Move forward so we have space to turn
-        for i in (1, 5):
+        self.forward()
+        success = self._map.go_to_marker(pose, 60)
+        self.forward()
+
+    def forward(self):
+        for i in (1, 30):
             self._pub.publish(FORWARD)
             time.sleep(1)
-        return self._map.go_to_marker(pose, 60)
+
+    def backward(self):
+        for i in (1, 30):
+            self._pub.publish(BACKWARD)
+            time.sleep(1)
 
     def goToPose(self, pose, timeout):
         return self._map.go_to_marker(pose, timeout)
